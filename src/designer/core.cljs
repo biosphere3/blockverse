@@ -39,25 +39,24 @@
              [:input {:value (:units port)}]
              ])))
 
-(defcomponent blocks-view [blocks owner]
+(defcomponent block-view [block owner]
   (render [this]
-          (html [:ul.blocks
-                 [:h2 "blocks"]
-                 (for [block blocks]
-                   [:li
-                    [:label "name " [:input {:value (:name block)}]]
-                    [:ul.ports
-                     [:h2 "ports "]
-                     (om/build-all port-view (:ports block))
-                     #_(for [port (:ports block)]
-                         (html-port port))]])])))
+          (html
+            [:li
+             [:label "name " [:input {:value (:name block)}]]
+             [:ul.ports
+              [:h2 "ports "]
+              (om/build-all port-view (:ports block))
+              #_(for [port (:ports block)]
+                  (html-port port))]])))
 
 (om/root
   (fn [data owner]
     (reify om/IRender
       (render [_]
               (html [:.form [:h1 "DESIGNER"]
-                     (om/build blocks-view (:blocks data))])
+                     [:ul "blocks"
+                      (om/build-all block-view (:blocks data))]])
               )))
   app-state
   {:target (. js/document (getElementById "app"))})
