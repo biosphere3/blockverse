@@ -1,2 +1,8 @@
-/* some style */
 
+html, body {
+    font-family: Avenir, "Helvetica Neue";
+}
+ul {
+    list-style: none;
+    padding-left: 1rem;
+}

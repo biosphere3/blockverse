@@ -1,26 +1,44 @@
 (ns ^:figwheel-always designer.core
   (:require [om.core :as om :include-macros true ]
             [sablono.core :as html :refer-macros [html]]
-            [om.dom :as dom :include-macros true]))
+            [om.dom :as dom :include-macros true]
+            ))
 
 (enable-console-print!)
 
 (println "Edits to this text should show up in your developer console.")
 
+(defrecord Port [type name scalar units])
+
 (def initial-state
   {:text "Hello world!!"
-   :blocks [:a :b]})
+   :blocks [{:name "humanoid"
+             :ports [(->Port :input "food" 360 "pounds per year")
+                     (->Port :input "water" 2 "L per day")]}]})
 
 (println "INITIAL STATE:" initial-state)
 
-(defonce app-state (atom initial-state))
+(def app-state (atom initial-state))
+
+(defn html-port [port]
+  [:.port
+   [:span "name "]
+   [:select [:option "input"] [:option "output"]]
+   [:input {:value (:name port)}]
+   [:input {:value (:scalar port)}]
+   [:input {:value (:units port)}]
+   ])
 
 (defn html-blocks [blocks]
-  (println blocks)
   [:ul.blocks
+   [:h2 "blocks"]
    (for [block blocks]
      [:li
-      [:input {:value "hi"}]])])
+      [:label "name " [:input {:value (:name block)}]]
+      [:ul.ports
+       [:h2 "ports "]
+       (for [port (:ports block)]
+         (html-port port))]])])
 
 (om/root
   (fn [data owner]
