@@ -20,6 +20,13 @@
 
 (def app-state (atom initial-state))
 
+(defn simple-html-view [markup-fn]
+  (fn [cursor owner]
+    (reify
+      om/IRender
+      (render [this] (html (markup-fn cursor owner))))))
+
+
 (defn html-port [port]
   [:.port
    [:span "name "]
@@ -29,6 +36,8 @@
    [:input {:value (:units port)}]
    ])
 
+(def port-view (simple-html-view html-port))
+
 (defn html-blocks [blocks]
   [:ul.blocks
    [:h2 "blocks"]
@@ -37,8 +46,11 @@
       [:label "name " [:input {:value (:name block)}]]
       [:ul.ports
        [:h2 "ports "]
-       (for [port (:ports block)]
+       (om/build-all port-view (:ports block))
+       #_(for [port (:ports block)]
          (html-port port))]])])
+
+(def blocks-view (simple-html-view html-blocks))
 
 (om/root
   (fn [data owner]
