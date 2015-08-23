@@ -1,5 +1,6 @@
 (ns ^:figwheel-always designer.core
   (:require [om.core :as om :include-macros true ]
+            [om-tools.core :refer-macros [defcomponent]]
             [sablono.core :as html :refer-macros [html]]
             [om.dom :as dom :include-macros true]
             ))
@@ -27,37 +28,36 @@
       (render [this] (html (markup-fn cursor owner))))))
 
 
-(defn html-port [port]
-  [:.port
-   [:span "name "]
-   [:select [:option "input"] [:option "output"]]
-   [:input {:value (:name port)}]
-   [:input {:value (:scalar port)}]
-   [:input {:value (:units port)}]
-   ])
+(defcomponent port-view [port owner]
+  (render [this]
+          (html
+            [:.port
+             [:span "name "]
+             [:select [:option "input"] [:option "output"]]
+             [:input {:value (:name port)}]
+             [:input {:value (:scalar port)}]
+             [:input {:value (:units port)}]
+             ])))
 
-(def port-view (simple-html-view html-port))
-
-(defn html-blocks [blocks]
-  [:ul.blocks
-   [:h2 "blocks"]
-   (for [block blocks]
-     [:li
-      [:label "name " [:input {:value (:name block)}]]
-      [:ul.ports
-       [:h2 "ports "]
-       (om/build-all port-view (:ports block))
-       #_(for [port (:ports block)]
-         (html-port port))]])])
-
-(def blocks-view (simple-html-view html-blocks))
+(defcomponent blocks-view [blocks owner]
+  (render [this]
+          (html [:ul.blocks
+                 [:h2 "blocks"]
+                 (for [block blocks]
+                   [:li
+                    [:label "name " [:input {:value (:name block)}]]
+                    [:ul.ports
+                     [:h2 "ports "]
+                     (om/build-all port-view (:ports block))
+                     #_(for [port (:ports block)]
+                         (html-port port))]])])))
 
 (om/root
   (fn [data owner]
     (reify om/IRender
       (render [_]
               (html [:.form [:h1 "DESIGNER"]
-                     (html-blocks (:blocks data))])
+                     (om/build blocks-view (:blocks data))])
               )))
   app-state
   {:target (. js/document (getElementById "app"))})
