@@ -2,7 +2,15 @@
 html, body {
     font-family: Avenir, "Helvetica Neue";
 }
+
 ul {
     list-style: none;
     padding-left: 1rem;
+}
+
+.block {
+    padding: 1rem;
+    margin: 0.5rem auto;
+    border: 1px solid #999;
+    border-radius: 5px;
 }
