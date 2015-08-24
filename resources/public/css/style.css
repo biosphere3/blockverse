@@ -1,6 +1,11 @@
 
 html, body {
     font-family: Avenir, "Helvetica Neue";
+    margin: 0;
+}
+
+.container {
+    margin: 1rem;
 }
 
 ul {
@@ -13,4 +18,10 @@ ul {
     margin: 0.5rem auto;
     border: 1px solid #999;
     border-radius: 5px;
+}
+
+.debug {
+    margin-top: 10em;
+    padding: 1rem 2rem;
+    background: #eee;
 }
