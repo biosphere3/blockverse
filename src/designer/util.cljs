@@ -23,15 +23,6 @@
    (get-keys-in fluxmap path ks nil)))
 
 
-(defmacro and-let
-  "from http://edtsech.github.io/2012/12/and-let.html"
-  [bindings expr]
-  (if (seq bindings)
-    `(if-let [~(first bindings) ~(second bindings)]
-       (and-let ~(drop 2 bindings) ~expr))
-     expr))
-
-
 (defn trace
   ([x]
    (trace " vvvvv " x))

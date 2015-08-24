@@ -7,33 +7,29 @@
             [om-tools.core :refer-macros [defcomponent]]
             [sablono.core :as html :refer-macros [html]]
             [om.dom :as dom :include-macros true]
+            [designer.util :refer (keyed)]
             ))
 
 (enable-console-print!)
 
 (defn log [x] (.log js/console x))
 
-(defrecord Port [type name scalar units])
-
-#_(defn mkport [type name scalar units]
-  {:type type
-   :name name
-   :booboo {:boo :boo}
-   :scalar scalar
-   :units units})
+(defrecord Block [name])
+(defrecord Port [type block name scalar units])
 
 (def initial-state
-  {:blocks [{:name "humanoid"
-             :ports [(->Port :input "food" 360 "pounds per year")
-                     (->Port :input "water" 2 "L per day")]}]})
+  (let [blocks [(->Block "humanoid")]
+        blockmap (keyed :name blocks)
+        b #(get blockmap %)
+        ports [(->Port :input (b "humanoid") "food" 360 "pounds per year")
+               (->Port :input (b "humanoid") "water" 2 "L per day")]]
+    {:blocks blocks :ports ports}))
 
 (def app-state (atom initial-state))
 
-(defn simple-html-view [markup-fn]
-  (fn [cursor owner]
-    (reify
-      om/IRender
-      (render [this] (html (markup-fn cursor owner))))))
+(defn get-block-ports
+  [ports block]
+  (filter #(= (:block %) block) ports))
 
 (defcomponent editable-field [data owner {:keys [field]}]
   (init-state [this] {:editing false})
@@ -65,23 +61,27 @@
                       :onChange (edit-fn port :units str)}]
              ])))
 
-(defcomponent block-view [block owner]
-  (render-state [this {:keys [comm]}]
+(defcomponent block-view [block owner {:keys [all-ports]}]
+  (render-state [this {:keys [comm] :as state}]
           (html
             [:li.block
              [:button {:onClick #(put! comm [:delete-block @block])} "×"]
              [:label "name " [:input {:value (:name block)
                                       :onChange (edit-fn block :name str)}]]
              [:ul.port-list
-              (om/build-all port-view (:ports block) {:init-state {:comm comm}})
-              [:button {:onClick (fn [] (om/transact! block :ports #(conj % {})))} "add one"]
+              (om/build-all port-view (get-block-ports all-ports @block) {:init-state {:comm comm}})
+              [:button {:onClick #(put! comm [:add-port [@block owner]])} "add one"]
               ]])))
 
 (defn handle-event
-  [app type value]
+  [data type value]
   (case type
-    :delete-block (om/transact! app :blocks #(vec (remove (partial = value) %)))
-    :delete-port (log "TODO")))
+    :delete-block (let [block value] (om/transact! data :blocks #(vec (remove (partial = block) %))))
+    :delete-port (log "TODO")
+    :add-port (let [[block owner] value]
+                (om/transact! data :ports #(vec (conj % {:block block
+                                                         :type :input})))
+                (om/refresh! owner))))
 
 (defcomponent app [data owner]
   (init-state [_] {:comm (chan)})
@@ -98,7 +98,7 @@
             [:h1 "DESIGNER"]
             [:ul.block-list
              [:h2 "blocks"]
-             (om/build-all block-view (:blocks data) {:init-state state})
+             (om/build-all block-view (:blocks data) {:init-state state :opts {:all-ports (:ports data)}})
              [:button {:onClick (fn [] (om/transact! data :blocks #(conj % {})))} "add one"]]]
            [:pre.debug (with-out-str (pprint @data))]])))
 
