@@ -1,5 +1,7 @@
 (ns ^:figwheel-always designer.core
-  (:require [om.core :as om :include-macros true ]
+  (:require [om.core :as om :include-macros true]
+            [cljs.pprint :refer (pprint)]
+            [cljs.reader :refer (read-string)]
             [om-tools.core :refer-macros [defcomponent]]
             [sablono.core :as html :refer-macros [html]]
             [om.dom :as dom :include-macros true]
@@ -19,8 +21,7 @@
    :units units})
 
 (def initial-state
-  {:text "Hello world!!"
-   :blocks [{:name "humanoid"
+  {:blocks [{:name "humanoid"
              :ports [(->Port :input "food" 360 "pounds per year")
                      (->Port :input "water" 2 "L per day")]}]})
 
@@ -46,26 +47,29 @@
         (html
           [:span {:onDoubleClick #(om/set-state! owner :editing true)} (field data)])))))
 
+(defn edit-fn [data field f]
+  (fn [e] (om/update! data field (f (.. e -target -value)))))
+
 (defcomponent port-view [port owner]
   (render [this]
           (html
             [:li.port
              [:select [:option "input"] [:option "output"]]
-             (om/build editable-field port {:opts {:field :name}})
-             (om/build editable-field port {:opts {:field :scalar}})
-             (om/build editable-field port {:opts {:field :units}})
-             #_[:input {:value (:name port)
-                      :onChange (handle-edit :name)
+             [:input {:value (:name port)
+                      :onChange (edit-fn port :name str)
                       :placeholder "name"}]
-             #_[:input {:value (:scalar port)}]
-             #_[:input {:value (:units port)}]
+             [:input {:value (:scalar port)
+                      :onChange (edit-fn port :scalar read-string)}]
+             [:input {:value (:units port)
+                      :onChange (edit-fn port :units str)}]
              ])))
 
 (defcomponent block-view [block owner]
   (render [this]
           (html
             [:li.block
-             [:label "name " [:input {:value (:name block)}]]
+             [:label "name " [:input {:value (:name block)
+                                      :onChange (edit-fn block :name str)}]]
              [:ul.ports
               (om/build-all port-view (:ports block))
               ]])))
@@ -74,10 +78,12 @@
   (fn [data owner]
     (reify om/IRender
       (render [_]
-              (html [:.form [:h1 "DESIGNER"]
-                     [:ul
-                      [:h2 "blocks"]
-                      (om/build-all block-view (:blocks data))]])
+              (html [:div
+                     [:.form [:h1 "DESIGNER"]
+                      [:ul
+                       [:h2 "blocks"]
+                       (om/build-all block-view (:blocks data))]]
+                     [:pre.debug (with-out-str (pprint @data))]])
               )))
   app-state
   {:target (. js/document (getElementById "app"))})
