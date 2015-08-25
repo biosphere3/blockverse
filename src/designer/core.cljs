@@ -17,11 +17,13 @@
 
 (defn log [x] (.log js/console x))
 
+(def rand-uuid (comp str uuid/make-random-uuid))
+
 (defrecord Block [uuid name])
 (defrecord Port [type block-uuid name scalar units])
 
 (def initial-state
-  (let [blocks [(->Block (uuid/make-random-uuid) "humanoid")]
+  (let [blocks [(->Block (rand-uuid) "humanoid")]
         blockmap (keyed :name blocks)
         b #(get-in blockmap [% :uuid])
         ports [(->Port :input (b "humanoid") "food" 360 "pounds per year")
@@ -104,8 +106,13 @@
             [:ul.block-list
              [:h2 "blocks"]
              (om/build-all block-view (:blocks data) {:init-state state :opts {:all-ports (:ports data)}})
-             [:button {:onClick (fn [] (om/transact! data :blocks #(conj % {})))} "add one"]]]
-           [:pre.debug (with-out-str (pprint (select-keys @data [:blocks :ports])))]])))
+             [:button {:onClick (fn [] (om/transact! data :blocks #(conj % (->Block (rand-uuid) ""))))} "add one"]]]
+           [:.debug
+            [:h2 "output"]
+            [:textarea
+             (as-> (select-keys @data [:blocks :ports]) $
+                   (clj->js $)
+                   (. js/JSON (stringify $ nil 2)))]]])))
 
 (om/root
   app

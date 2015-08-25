@@ -2,3 +2,23 @@
 - [ ] save/switch system states
 - [ ] draw graph
   - [ ] hook up models
+
+* Block Editing
+- [ ] block function
+  - [ ] function of inputs
+  - [ ] produces quantities at the outputs
+  - [ ] may be proportional to inputs/outputs
+- [ ] ports
+  - [ ] quantity with units
+  - [ ] of a particular resource
+
+* System Editing
+- [ ] connections
+  - [ ] between a port and a resource
+
+* Simulation
+- [ ] build accounts from graph resources
+- [ ] set initial values of accounts
+- [ ] run a time step
+- [ ] update account values at a time step
+- [ ] undo

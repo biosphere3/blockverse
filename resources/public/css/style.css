@@ -25,3 +25,8 @@ ul {
     padding: 1rem 2rem;
     background: #eee;
 }
+
+.debug textarea {
+    min-height: 250px;
+    width: 100%;
+}
