@@ -4,23 +4,26 @@
             [cljs.pprint :refer (pprint)]
             [cljs.reader :refer (read-string)]
             [cljs.core.async :refer [put! chan <!]]
+            [cljs-uuid-utils.core :as uuid]
+
+            [om.dom :as dom :include-macros true]
             [om-tools.core :refer-macros [defcomponent]]
             [sablono.core :as html :refer-macros [html]]
-            [om.dom :as dom :include-macros true]
-            [designer.util :refer (keyed)]
+
+            [designer.util :refer (keyed trace)]
             ))
 
 (enable-console-print!)
 
 (defn log [x] (.log js/console x))
 
-(defrecord Block [name])
-(defrecord Port [type block name scalar units])
+(defrecord Block [uuid name])
+(defrecord Port [type block-uuid name scalar units])
 
 (def initial-state
-  (let [blocks [(->Block "humanoid")]
+  (let [blocks [(->Block (uuid/make-random-uuid) "humanoid")]
         blockmap (keyed :name blocks)
-        b #(get blockmap %)
+        b #(get-in blockmap [% :uuid])
         ports [(->Port :input (b "humanoid") "food" 360 "pounds per year")
                (->Port :input (b "humanoid") "water" 2 "L per day")]]
     {:blocks blocks :ports ports}))
@@ -29,7 +32,7 @@
 
 (defn get-block-ports
   [ports block]
-  (filter #(= (:block %) block) ports))
+  (filter #(= (get % :block-uuid) (:uuid block)) ports))
 
 (defcomponent editable-field [data owner {:keys [field]}]
   (init-state [this] {:editing false})
