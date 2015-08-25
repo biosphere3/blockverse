@@ -17,7 +17,7 @@
 
 (defn log [x] (.log js/console x))
 
-(def rand-uuid (comp str uuid/make-random-uuid))
+(def rand-uuid uuid/make-random-uuid)
 
 (defrecord Block [uuid name])
 (defrecord Port [type block-uuid name scalar units])
@@ -110,9 +110,11 @@
            [:.debug
             [:h2 "output"]
             [:textarea
-             (as-> (select-keys @data [:blocks :ports]) $
-                   (clj->js $)
-                   (. js/JSON (stringify $ nil 2)))]]])))
+             (-> (select-keys @data [:blocks :ports])
+                   (pprint)
+                   (with-out-str)
+                   #_(clj->js $)
+                   #_(. js/JSON (stringify $ nil 2)))]]])))
 
 (om/root
   app
