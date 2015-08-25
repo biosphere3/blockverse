@@ -1,0 +1,4 @@
+
+- [ ] save/switch system states
+- [ ] draw graph
+  - [ ] hook up models

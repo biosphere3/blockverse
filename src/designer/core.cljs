@@ -73,7 +73,7 @@
                                       :onChange (edit-fn block :name str)}]]
              [:ul.port-list
               (om/build-all port-view (get-block-ports all-ports @block) {:init-state {:comm comm}})
-              [:button {:onClick #(put! comm [:add-port [@block owner]])} "add one"]
+              [:button {:onClick #(put! comm [:add-port [(:uuid @block) owner]])} "add one"]
               ]])))
 
 (defn handle-event
@@ -82,12 +82,13 @@
     :delete-block (let [block value] (om/transact! data :blocks #(vec (remove (partial = block) %))))
     :delete-port (log "TODO")
     :add-port (let [[block owner] value]
-                (om/transact! data :ports #(vec (conj % {:block block
+                (om/transact! data :ports #(vec (conj % {:block-uuid block
                                                          :type :input})))
                 (om/refresh! owner))))
 
 (defcomponent app [data owner]
   (init-state [_] {:comm (chan)})
+
   (will-mount
     [_]
     (let [comm (om/get-state owner :comm)]
@@ -95,6 +96,7 @@
             (let [[type value] (<! comm)]
               (handle-event data type value)
               (recur))))))
+
   (render-state [_ state]
     (html [:div
            [:.container
@@ -103,7 +105,7 @@
              [:h2 "blocks"]
              (om/build-all block-view (:blocks data) {:init-state state :opts {:all-ports (:ports data)}})
              [:button {:onClick (fn [] (om/transact! data :blocks #(conj % {})))} "add one"]]]
-           [:pre.debug (with-out-str (pprint @data))]])))
+           [:pre.debug (with-out-str (pprint (select-keys @data [:blocks :ports])))]])))
 
 (om/root
   app

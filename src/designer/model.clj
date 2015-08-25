@@ -2,8 +2,8 @@
   (:use clojure.pprint)
   (:require [ubergraph.core :as uber])
   (:require [frinj.node :refer (frinj-init!)]
-            [frinj.ops :refer :all]
-            [designer.util :refer :all])
+            [frinj.ops :refer (fj)]
+            [designer.util :as util])
   )
 
 (frinj-init! "units.edn")
