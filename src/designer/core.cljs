@@ -5,6 +5,7 @@
             [cljs.reader :refer (read-string)]
             [cljs.core.async :refer [put! chan <!]]
             [cljs-uuid-utils.core :as uuid]
+            [goog.crypt.base64 :as b64]
 
             [om.dom :as dom :include-macros true]
             [om-tools.core :refer-macros [defcomponent]]
@@ -19,16 +20,40 @@
 
 (def rand-uuid uuid/make-random-uuid)
 
+(defn get-location-hash
+  []
+  (-> (.-hash js/location) (subs 1)))
+
+(defn set-location-hash!
+  [h]
+  (set! (.-hash js/location) h))
+
+(defn b64->state
+  [b64-string]
+  (try
+    (-> b64-string b64/decodeString read-string)
+    (catch js/Object e
+      (trace {}))))
+
+(defn state->b64
+  [state]
+  (-> state pprint with-out-str b64/encodeString))
+
 (defrecord Block [uuid name])
 (defrecord Port [type block-uuid name scalar units])
 
-(def initial-state
-  (let [blocks [(->Block (rand-uuid) "humanoid")]
+(def sample-state
+  (let [blocks [(->Block (rand-uuid) "human")]
         blockmap (keyed :name blocks)
         b #(get-in blockmap [% :uuid])
-        ports [(->Port :input (b "humanoid") "food" 360 "pounds per year")
-               (->Port :input (b "humanoid") "water" 2 "L per day")]]
+        ports [(->Port :input (b "human") "food" 360 "pounds per year")
+               (->Port :input (b "human") "water" 2 "L per day")]]
     {:blocks blocks :ports ports}))
+
+(def initial-state
+  (if-not (empty? (get-location-hash))
+    (b64->state (get-location-hash))
+    sample-state))
 
 (def app-state (atom initial-state))
 
@@ -93,11 +118,18 @@
 
   (will-mount
     [_]
+    (when-not (empty? (get-location-hash))
+      (-> @data state->b64 set-location-hash!))
     (let [comm (om/get-state owner :comm)]
       (go (loop []
             (let [[type value] (<! comm)]
               (handle-event data type value)
               (recur))))))
+
+  (will-receive-props
+    [_ props]
+    (-> @data state->b64 set-location-hash!)
+    )
 
   (render-state [_ state]
     (html [:div
@@ -107,14 +139,21 @@
              [:h2 "blocks"]
              (om/build-all block-view (:blocks data) {:init-state state :opts {:all-ports (:ports data)}})
              [:button {:onClick (fn [] (om/transact! data :blocks #(conj % (->Block (rand-uuid) ""))))} "add one"]]]
-           [:.debug
-            [:h2 "output"]
-            [:textarea
-             (-> (select-keys @data [:blocks :ports])
-                   (pprint)
-                   (with-out-str)
-                   #_(clj->js $)
-                   #_(. js/JSON (stringify $ nil 2)))]]])))
+           [:.debug-pane
+            [:.container
+             [:h2 {:style {:display "inline-block"}} "state"]
+             [:button {:href "#"
+                  :onClick #(let [new-state (js/prompt "paste app state here!")]
+                              (when-not (empty? new-state)
+                                (om/update! data (b64->state new-state))))
+                  :style {:display "inline-block"
+                          :margin-left "1rem"}} "update"]]
+            [:pre.debug-output
+             (-> @data
+                 (select-keys [:blocks :ports])
+                 (pprint)
+                 (with-out-str)
+                 (b64/encodeString))]]])))
 
 (om/root
   app
